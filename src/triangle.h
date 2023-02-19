@@ -1,3 +1,12 @@
+/* ------- NOTE -----------------------------------------------
+ * This is a modified version of Shewchuk's code.
+ * The modifications change only the compilation options.
+ * The triangulation code itself is not touched.
+ *
+ * -- Rouben Rostamian <rostamian@umbc.edu>
+ * -- 2009-05-07
+*/
+
 /*****************************************************************************/
 /*                                                                           */
 /*  (triangle.h)                                                             */
@@ -248,6 +257,17 @@
 /*                                                                           */
 /*****************************************************************************/
 
+#ifndef TRIANGLE_H_INCLUDED
+#define TRIANGLE_H_INCLUDED
+
+#define ANSI_DECLARATORS
+#define VOID void
+#ifdef SINGLE
+#define REAL float
+#else
+#define REAL double
+#endif
+
 struct triangulateio {
   REAL *pointlist;                                               /* In / out */
   REAL *pointattributelist;                                      /* In / out */
@@ -287,3 +307,5 @@ void trifree(VOID *memptr);
 void triangulate();
 void trifree();
 #endif /* not ANSI_DECLARATORS */
+
+#endif /* TRIANGLE_H_INCLUDED */
