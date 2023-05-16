@@ -4,6 +4,7 @@ use rayon::prelude::*;
 use serde::Serialize;
 use serde_pickle as pkl;
 use std::{error::Error, ffi::CString, fmt, fs::File, path::Path};
+use std::cmp::Ordering;
 
 //include!("bindings.rs");
 
@@ -217,6 +218,8 @@ impl Delaunay {
     pub fn is_point_inside(&self, point: &[f64], triangle_id: usize) -> bool {
         let triangle = self.triangle_iter().nth(triangle_id).unwrap();
         let points: Vec<&[f64]> = self.vertex_iter().collect();
+        // let mut has_neg = false;
+        // let mut has_pos = false;
         for i in 0..3 {
             let j = (i + 1) % 3;
             let vi = triangle[i];
@@ -226,7 +229,13 @@ impl Delaunay {
             if d < 0. && d.abs() > 1e-9 {
                 return false;
             }
+            // match d.total_cmp(&0.0) {
+            //     Ordering::Greater => { has_pos = true },
+            //     Ordering::Less => { has_neg = true },
+            //     Ordering::Equal => {}
+            // }
         }
+        // !(has_neg && has_pos)
         true
     }
     /// Finds the index of the triangle in `triangles_iter` that contains the given point `[x,y]`
