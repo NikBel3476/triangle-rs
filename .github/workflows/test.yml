@@ -1,0 +1,29 @@
+name: test
+
+on: [push]
+
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: build-${{ matrix.platform }}
+    environment: test
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-22.04, windows-2022, macos-12]
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Rust setup
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Build the library
+        run: cargo build
+
+      - name: Run Rust tests
+        run: cargo test
