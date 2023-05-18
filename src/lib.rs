@@ -4,7 +4,6 @@ use rayon::prelude::*;
 use serde::Serialize;
 use serde_pickle as pkl;
 use std::{error::Error, ffi::CString, fmt, fs::File, path::Path};
-use std::cmp::Ordering;
 
 //include!("bindings.rs");
 
@@ -218,25 +217,21 @@ impl Delaunay {
     pub fn is_point_inside(&self, point: &[f64], triangle_id: usize) -> bool {
         let triangle = self.triangle_iter().nth(triangle_id).unwrap();
         let points: Vec<&[f64]> = self.vertex_iter().collect();
-        // let mut has_neg = false;
-        // let mut has_pos = false;
-        for i in 0..3 {
-            let j = (i + 1) % 3;
-            let vi = triangle[i];
-            let vj = triangle[j];
-            let d = (points[vj][0] - points[vi][0]) * (point[1] - points[vi][1])
-                - (points[vj][1] - points[vi][1]) * (point[0] - points[vi][0]);
-            if d < 0. && d.abs() > 1e-9 {
-                return false;
-            }
-            // match d.total_cmp(&0.0) {
-            //     Ordering::Greater => { has_pos = true },
-            //     Ordering::Less => { has_neg = true },
-            //     Ordering::Equal => {}
-            // }
-        }
-        // !(has_neg && has_pos)
-        true
+
+        // let d1 = self.sign(point, points[0], points[1]);
+        // let d2 = self.sign(point, points[1], points[2]);
+        // let d3 = self.sign(point, points[2], points[0]);
+        let d1 = self.sign(point, points[triangle[0]], points[triangle[1]]);
+        let d2 = self.sign(point, points[triangle[1]], points[triangle[2]]);
+        let d3 = self.sign(point, points[triangle[2]], points[triangle[0]]);
+        let has_neg = (d1 < 0.0) || (d2 < 0.0) || (d3 < 0.0);
+        let has_pos = (d1 > 0.0) || (d2 > 0.0) || (d3 > 0.0);
+
+        !(has_neg && has_pos)
+    }
+
+    fn sign(&self, p1: &[f64], p2: &[f64], p3: &[f64]) -> f64 {
+        (p1[0] - p3[0]) * (p2[1] - p3[1]) - (p2[0] - p3[0]) * (p1[1] - p3[1])
     }
     /// Finds the index of the triangle in `triangles_iter` that contains the given point `[x,y]`
     pub fn which_contains_point(&self, point: &[f64]) -> Option<usize> {
@@ -383,7 +378,7 @@ impl Builder {
         self
     }
     pub fn set_segments(self, x: Vec<i32>, y: Vec<i32>) -> Self {
-        assert!(x.len() == y.len(), "x and y are not the same length.");
+        assert_eq!(x.len(), y.len(), "x and y are not the same length.");
         //let mut data = self.triangulate_io;
         let n = x.len() as i32;
         let xy = x
@@ -645,5 +640,57 @@ mod tests {
             .add_polygon(&[1., 0., 0., 1., -1., 0., 0., -1.])
             .build();
         assert_eq!(tri.area(), 2.)
+    }
+
+    #[test]
+    fn point_inside_triangle() {
+        let polygon = vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0];
+        let tri = Builder::new()
+            .set_switches("Q")
+            .add_polygon(&polygon)
+            .build();
+        let points = vec![
+            [0.0, 0.0],
+            [0.5, 0.0],
+            [1.0, 0.0],
+            [0.5, 0.5],
+            [0.0, 1.0],
+            [0.0, 0.5],
+        ];
+        for triangle_index in 0..tri.n_triangles() {
+            for point in &points {
+                assert!(
+                    tri.is_point_inside(point, triangle_index),
+                    "\nPoint {:?} should be inside triangle\n",
+                    point
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn point_outside_triangle() {
+        let polygon = vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0];
+        let tri = Builder::new()
+            .set_switches("Q")
+            .add_polygon(&polygon)
+            .build();
+        let points = vec![
+            [-1.0, -1.0],
+            [0.5, -1.0],
+            [1.5, -0.5],
+            [1.0, 1.0],
+            [-0.5, 1.5],
+            [-0.5, 0.5],
+        ];
+        for triangle_index in 0..tri.n_triangles() {
+            for point in &points {
+                assert!(
+                    !tri.is_point_inside(point, triangle_index),
+                    "\nPoint {:?} should be outside triangle\n",
+                    point
+                );
+            }
+        }
     }
 }
