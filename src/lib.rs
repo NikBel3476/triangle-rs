@@ -159,17 +159,30 @@ impl Delaunay {
         self.triangle_iter()
             .map(|t| {
                 let (a, b, c) = (&vertices[t[0]], &vertices[t[1]], &vertices[t[2]]);
-                0.5 * ((a[0] - c[0]) * (b[1] - a[1]) - (a[0] - b[0]) * (c[1] - a[1])).abs()
+                // 0.5 * ((a[0] - c[0]) * (b[1] - a[1]) - (a[0] - b[0]) * (c[1] - a[1])).abs()
+                0.5 * ((a[0] - c[0]) * (b[1] - c[1]) - (b[0] - c[0]) * (a[1] - c[1])).abs()
             })
             .collect()
     }
     /// Returns the area covered by the mesh as the sum of the triangle area
     pub fn area(&self) -> f64 {
-        let vertices: Vec<Vec<f64>> = self.vertex_iter().map(|x| x.to_vec()).collect();
-        self.triangle_iter().fold(0., |s, t| {
-            let (a, b, c) = (&vertices[t[0]], &vertices[t[1]], &vertices[t[2]]);
-            s + 0.5 * ((a[0] - c[0]) * (b[1] - a[1]) - (a[0] - b[0]) * (c[1] - a[1])).abs()
-        })
+        // let vertices: Vec<Vec<f64>> = self.vertex_iter().map(|x| x.to_vec()).collect();
+        // self.triangle_iter().fold(0., |s, triangle| {
+        //     let (a, b, c) = (
+        //         &vertices[triangle[0]],
+        //         &vertices[triangle[1]],
+        //         &vertices[triangle[2]],
+        //     );
+        //     s + 0.5 * ((a[0] - c[0]) * (b[1] - a[1]) - (a[0] - b[0]) * (c[1] - a[1])).abs()
+        // })
+        // self.triangle_vertex_iter().fold(0.0, |area, triangle| {
+        //     let (a, b, c) = (triangle[0], triangle[1], triangle[2]);
+        //     let triangle_area = 0.5 * (a.0 * (b.1 - c.1) + b.0 * (c.1 - a.1) + c.0 * (a.1 - b.1));
+        //     area + triangle_area
+        // })
+        self.triangle_areas()
+            .iter()
+            .fold(0.0, |area, triangle_area| area + triangle_area)
     }
     /// Returns the area covered by the mesh as the sum of the Delaunay triangles area
     pub fn mesh_area(&self) -> f64 {
@@ -218,9 +231,6 @@ impl Delaunay {
         let triangle = self.triangle_iter().nth(triangle_id).unwrap();
         let points: Vec<&[f64]> = self.vertex_iter().collect();
 
-        // let d1 = self.sign(point, points[0], points[1]);
-        // let d2 = self.sign(point, points[1], points[2]);
-        // let d3 = self.sign(point, points[2], points[0]);
         let d1 = self.sign(point, points[triangle[0]], points[triangle[1]]);
         let d2 = self.sign(point, points[triangle[1]], points[triangle[2]]);
         let d3 = self.sign(point, points[triangle[2]], points[triangle[0]]);
@@ -231,12 +241,7 @@ impl Delaunay {
     }
 
     pub fn is_point_inside(&self, point: &[f64]) -> bool {
-        for triangle_index in 0..self.n_triangles() {
-            if self.is_point_inside_triangle(point, triangle_index) {
-                return true;
-            }
-        }
-        false
+        self.which_contains_point(point).is_some()
     }
 
     fn sign(&self, p1: &[f64], p2: &[f64], p3: &[f64]) -> f64 {
@@ -244,12 +249,7 @@ impl Delaunay {
     }
     /// Finds the index of the triangle in `triangles_iter` that contains the given point `[x,y]`
     pub fn which_contains_point(&self, point: &[f64]) -> Option<usize> {
-        for k in 0..self.n_triangles() {
-            if self.is_point_inside_triangle(point, k) {
-                return Some(k);
-            }
-        }
-        None
+        (0..self.n_triangles()).find(|&k| self.is_point_inside_triangle(point, k))
     }
     /// Returns the barycentric coordinates of a point `[x,y]` with respect to the triangle that contains it
     ///
