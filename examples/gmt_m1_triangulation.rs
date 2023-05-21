@@ -125,14 +125,14 @@ fn main() {
     // HOLES
     let holes = [[-2.2, 0.], [1.1, -1.9], [1.1, 1.9], [0., 0.]];
 
-    println!("nodes: {:#?}",nodes);
+    println!("nodes: {:#?}", nodes);
     let (xn, yn): (Vec<f64>, Vec<f64>) = nodes.into_iter().unzip();
     let (xe, ye): (Vec<i32>, Vec<i32>) = edges.into_iter().unzip();
     let (xh, yh): (Vec<f64>, Vec<f64>) = holes.iter().map(|z| (z[0], z[1])).unzip();
     /*let tri = Builder::new()
-        .set_points(xn, yn)
-        .set_segments(xe, ye)
-        .set_holes(xh, yh)
-        .set_switches("Dnpqa.025")
-        .build();*/
+    .set_points(xn, yn)
+    .set_segments(xe, ye)
+    .set_holes(xh, yh)
+    .set_switches("Dnpqa.025")
+    .build();*/
 }
