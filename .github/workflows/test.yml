@@ -23,7 +23,7 @@ jobs:
         uses: dtolnay/rust-toolchain@stable
 
       - name: Build the library
-        run: cargo build
+        run: cargo build --release
 
       - name: Run Rust tests
         run: cargo test
