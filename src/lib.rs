@@ -669,7 +669,7 @@ mod tests {
 
     #[test]
     fn area_complex_figure_with_right_angles() {
-        let nodes = vec![
+        let polygon = vec![
             35.97872543334961, // 1
             -34.659114837646484,
             35.97872543334961, // 2
@@ -713,7 +713,10 @@ mod tests {
             35.97872543334961, // 21
             -34.659114837646484,
         ];
-        let tri = Builder::new().set_switches("Q").add_polygon(&nodes).build();
+        let tri = Builder::new()
+            .set_switches("Q")
+            .add_polygon(&polygon)
+            .build();
         println!("{:#?}", tri);
         assert_eq!(tri.area(), 15.45);
     }
@@ -821,5 +824,51 @@ mod tests {
                 point
             )
         }
+    }
+
+    #[test]
+    fn square_intersection() {
+        let polygon = vec![
+            1.0804720876503242,
+            9.784116583159095,
+            9.452596550210751,
+            9.830117267019318,
+            9.475596892140864,
+            1.2969904109481103,
+            1.1034724295804352,
+            1.2969904109481103,
+            1.0804720876503242,
+            9.784116583159095,
+        ];
+
+        let tri = Builder::new()
+            .set_switches("Q")
+            .add_polygon(&polygon)
+            .build();
+
+        let points_outside = vec![
+            [7.198563041059868, 10.888132995804426],
+            [8.877588001957976, 10.934133679664647],
+        ];
+        let points_inside = vec![
+            [8.854587660027866, 9.577113505788097],
+            [7.198563041059868, 9.554113163857984],
+        ];
+
+        points_outside.iter().for_each(|point| {
+            assert!(
+                !tri.is_point_inside(point),
+                "\nPoint {:?} should be outside square\n",
+                point
+            )
+        });
+
+        points_inside.iter().for_each(|point| {
+            assert!(
+                tri.is_point_inside(point),
+                "\nPoint {:?} should be inside square\n",
+                point
+            )
+        });
     }
 }
