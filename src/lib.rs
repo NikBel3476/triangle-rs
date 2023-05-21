@@ -159,17 +159,30 @@ impl Delaunay {
         self.triangle_iter()
             .map(|t| {
                 let (a, b, c) = (&vertices[t[0]], &vertices[t[1]], &vertices[t[2]]);
-                0.5 * ((a[0] - c[0]) * (b[1] - a[1]) - (a[0] - b[0]) * (c[1] - a[1])).abs()
+                // 0.5 * ((a[0] - c[0]) * (b[1] - a[1]) - (a[0] - b[0]) * (c[1] - a[1])).abs()
+                0.5 * ((a[0] - c[0]) * (b[1] - c[1]) - (b[0] - c[0]) * (a[1] - c[1])).abs()
             })
             .collect()
     }
     /// Returns the area covered by the mesh as the sum of the triangle area
     pub fn area(&self) -> f64 {
-        let vertices: Vec<Vec<f64>> = self.vertex_iter().map(|x| x.to_vec()).collect();
-        self.triangle_iter().fold(0., |s, t| {
-            let (a, b, c) = (&vertices[t[0]], &vertices[t[1]], &vertices[t[2]]);
-            s + 0.5 * ((a[0] - c[0]) * (b[1] - a[1]) - (a[0] - b[0]) * (c[1] - a[1])).abs()
-        })
+        // let vertices: Vec<Vec<f64>> = self.vertex_iter().map(|x| x.to_vec()).collect();
+        // self.triangle_iter().fold(0., |s, triangle| {
+        //     let (a, b, c) = (
+        //         &vertices[triangle[0]],
+        //         &vertices[triangle[1]],
+        //         &vertices[triangle[2]],
+        //     );
+        //     s + 0.5 * ((a[0] - c[0]) * (b[1] - a[1]) - (a[0] - b[0]) * (c[1] - a[1])).abs()
+        // })
+        // self.triangle_vertex_iter().fold(0.0, |area, triangle| {
+        //     let (a, b, c) = (triangle[0], triangle[1], triangle[2]);
+        //     let triangle_area = 0.5 * (a.0 * (b.1 - c.1) + b.0 * (c.1 - a.1) + c.0 * (a.1 - b.1));
+        //     area + triangle_area
+        // })
+        self.triangle_areas()
+            .iter()
+            .fold(0.0, |area, triangle_area| area + triangle_area)
     }
     /// Returns the area covered by the mesh as the sum of the Delaunay triangles area
     pub fn mesh_area(&self) -> f64 {
@@ -218,9 +231,6 @@ impl Delaunay {
         let triangle = self.triangle_iter().nth(triangle_id).unwrap();
         let points: Vec<&[f64]> = self.vertex_iter().collect();
 
-        // let d1 = self.sign(point, points[0], points[1]);
-        // let d2 = self.sign(point, points[1], points[2]);
-        // let d3 = self.sign(point, points[2], points[0]);
         let d1 = self.sign(point, points[triangle[0]], points[triangle[1]]);
         let d2 = self.sign(point, points[triangle[1]], points[triangle[2]]);
         let d3 = self.sign(point, points[triangle[2]], points[triangle[0]]);
@@ -231,12 +241,7 @@ impl Delaunay {
     }
 
     pub fn is_point_inside(&self, point: &[f64]) -> bool {
-        for triangle_index in 0..self.n_triangles() {
-            if self.is_point_inside_triangle(point, triangle_index) {
-                return true;
-            }
-        }
-        false
+        self.which_contains_point(point).is_some()
     }
 
     fn sign(&self, p1: &[f64], p2: &[f64], p3: &[f64]) -> f64 {
@@ -244,12 +249,7 @@ impl Delaunay {
     }
     /// Finds the index of the triangle in `triangles_iter` that contains the given point `[x,y]`
     pub fn which_contains_point(&self, point: &[f64]) -> Option<usize> {
-        for k in 0..self.n_triangles() {
-            if self.is_point_inside_triangle(point, k) {
-                return Some(k);
-            }
-        }
-        None
+        (0..self.n_triangles()).find(|&k| self.is_point_inside_triangle(point, k))
     }
     /// Returns the barycentric coordinates of a point `[x,y]` with respect to the triangle that contains it
     ///
@@ -642,9 +642,18 @@ impl TriPlot for Delaunay {
 #[cfg(test)]
 mod tests {
     use super::*;
+
     #[test]
-    fn area() {
+    fn area_triangle() {
+        let nodes = vec![0.0, -1.0, 1.0, 0.0, 0.0, 1.0];
+        let tri = Builder::new().set_switches("Q").add_nodes(&nodes).build();
+        assert_eq!(tri.area(), 1.0);
+    }
+
+    #[test]
+    fn area_square() {
         let tri = Builder::new()
+            .set_switches("Q")
             .add_nodes(&[0., 0.])
             .add_polygon(&[1., 0., 0., 1., -1., 0., 0., -1.])
             .build();
@@ -652,10 +661,71 @@ mod tests {
     }
 
     #[test]
+    fn area_parallelogram() {
+        let nodes = vec![-2.0, -1.0, 2.0, -1.0, 3.0, 1.0, -1.0, 1.0];
+        let tri = Builder::new().set_switches("Q").add_nodes(&nodes).build();
+        assert_eq!(tri.area(), 8.0);
+    }
+
+    #[test]
+    fn area_complex_figure_with_right_angles() {
+        let polygon = vec![
+            35.97872543334961, // 1
+            -34.659114837646484,
+            35.97872543334961, // 2
+            -37.01911163330078,
+            33.9708251953125, // 3
+            -37.01911163330078,
+            33.9708251953125, // 4
+            -37.219112396240234,
+            34.07872772216797, // 5
+            -37.219112396240234,
+            34.0787277221679, // 6
+            -38.4352912902832,
+            33.15372467041016, // 7
+            -38.4352912902832,
+            33.153724670410156, // 8
+            -37.219112396240234,
+            33.25210189819336, // 9
+            -37.219112396240234,
+            33.25210189819336, // 10
+            -37.01911163330078,
+            32.90689468383789, // 11
+            -37.01911163330078,
+            32.90689468383789, // 12
+            -37.219112396240234,
+            33.003726959228516, // 13
+            -37.219112396240234,
+            33.00372695922856, // 14
+            -38.4352912902832,
+            32.0787277221679, // 15
+            -38.4352912902832,
+            32.07872772216797, // 16
+            -37.219112396240234,
+            32.193763732910156, // 17
+            -37.219112396240234,
+            32.19376373291015, // 18
+            -37.01911163330078,
+            30.50872802734375, // 19
+            -37.01911163330078,
+            30.50872802734375, // 20
+            -34.659114837646484,
+            35.97872543334961, // 21
+            -34.659114837646484,
+        ];
+        let tri = Builder::new()
+            .set_switches("pDqQ")
+            .add_polygon(&polygon)
+            .build();
+        println!("{:#?}", tri);
+        assert_eq!(tri.area(), 15.445482030030712);
+    }
+
+    #[test]
     fn point_inside_triangle() {
         let polygon = vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0];
         let tri = Builder::new()
-            .set_switches("Q")
+            .set_switches("pDqQ")
             .add_polygon(&polygon)
             .build();
         let points = vec![
@@ -681,7 +751,7 @@ mod tests {
     fn point_outside_triangle() {
         let polygon = vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0];
         let tri = Builder::new()
-            .set_switches("Q")
+            .set_switches("pDqQ")
             .add_polygon(&polygon)
             .build();
         let points = vec![
@@ -707,7 +777,7 @@ mod tests {
     fn point_inside_square() {
         let polygon = vec![0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
         let tri = Builder::new()
-            .set_switches("Q")
+            .set_switches("pDqQ")
             .add_polygon(&polygon)
             .build();
         let points = vec![
@@ -734,7 +804,7 @@ mod tests {
     fn point_outside_square() {
         let polygon = vec![0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
         let tri = Builder::new()
-            .set_switches("Q")
+            .set_switches("pDqQ")
             .add_polygon(&polygon)
             .build();
         let points = vec![
@@ -754,5 +824,129 @@ mod tests {
                 point
             )
         }
+    }
+
+    #[test]
+    fn rectangles_intersection() {
+        let polygon = vec![
+            1.0804720876503242,
+            9.784116583159095,
+            9.452596550210751,
+            9.830117267019318,
+            9.475596892140864,
+            1.2969904109481103,
+            1.1034724295804352,
+            1.2969904109481103,
+            1.0804720876503242,
+            9.784116583159095,
+        ];
+
+        let tri = Builder::new()
+            .set_switches("pDqQ")
+            .add_polygon(&polygon)
+            .build();
+
+        let points_outside = vec![
+            [7.198563041059868, 10.888132995804426],
+            [8.877588001957976, 10.934133679664647],
+        ];
+        let points_inside = vec![
+            [8.854587660027866, 9.577113505788097],
+            [7.198563041059868, 9.554113163857984],
+        ];
+
+        points_outside.iter().for_each(|point| {
+            assert!(
+                !tri.is_point_inside(point),
+                "\nPoint {:?} should be outside rectangle\n",
+                point
+            )
+        });
+
+        points_inside.iter().for_each(|point| {
+            assert!(
+                tri.is_point_inside(point),
+                "\nPoint {:?} should be inside rectangle\n",
+                point
+            )
+        });
+    }
+
+    #[test]
+    fn intersection_of_a_figure_and_a_rectangle() {
+        let polygon = vec![
+            35.97872543334961, // 1
+            -34.659114837646484,
+            35.97872543334961, // 2
+            -37.01911163330078,
+            33.9708251953125, // 3
+            -37.01911163330078,
+            33.9708251953125, // 4
+            -37.219112396240234,
+            34.07872772216797, // 5
+            -37.219112396240234,
+            34.0787277221679, // 6
+            -38.4352912902832,
+            33.15372467041016, // 7
+            -38.4352912902832,
+            33.153724670410156, // 8
+            -37.219112396240234,
+            33.25210189819336, // 9
+            -37.219112396240234,
+            33.25210189819336, // 10
+            -37.01911163330078,
+            32.90689468383789, // 11
+            -37.01911163330078,
+            32.90689468383789, // 12
+            -37.219112396240234,
+            33.003726959228516, // 13
+            -37.219112396240234,
+            33.00372695922856, // 14
+            -38.4352912902832,
+            32.0787277221679, // 15
+            -38.4352912902832,
+            32.07872772216797, // 16
+            -37.219112396240234,
+            32.193763732910156, // 17
+            -37.219112396240234,
+            32.19376373291015, // 18
+            -37.01911163330078,
+            30.50872802734375, // 19
+            -37.01911163330078,
+            30.50872802734375, // 20
+            -34.659114837646484,
+            35.97872543334961, // 21
+            -34.659114837646484,
+        ];
+
+        let tri = Builder::new()
+            .set_switches("pDqQ")
+            .add_polygon(&polygon)
+            .build();
+
+        let points_outside = vec![
+            [31.87872886657715, -38.24702072143555],
+            [31.87872886657715, -37.34701919555664],
+        ];
+        let points_inside = vec![
+            [32.07872772216797, -38.24702072143555],
+            [32.07872772216797, -37.34701919555664],
+        ];
+
+        points_outside.iter().for_each(|point| {
+            assert!(
+                !tri.is_point_inside(point),
+                "\nPoint {:?} should be outside figure\n",
+                point
+            )
+        });
+
+        points_inside.iter().for_each(|point| {
+            assert!(
+                tri.is_point_inside(point),
+                "\nPoint {:?} should be inside figure\n",
+                point
+            )
+        });
     }
 }
