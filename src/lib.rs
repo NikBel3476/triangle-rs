@@ -714,18 +714,18 @@ mod tests {
             -34.659114837646484,
         ];
         let tri = Builder::new()
-            .set_switches("Q")
+            .set_switches("pDqQ")
             .add_polygon(&polygon)
             .build();
         println!("{:#?}", tri);
-        assert_eq!(tri.area(), 15.45);
+        assert_eq!(tri.area(), 15.445482030030712);
     }
 
     #[test]
     fn point_inside_triangle() {
         let polygon = vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0];
         let tri = Builder::new()
-            .set_switches("Q")
+            .set_switches("pDqQ")
             .add_polygon(&polygon)
             .build();
         let points = vec![
@@ -751,7 +751,7 @@ mod tests {
     fn point_outside_triangle() {
         let polygon = vec![0.0, 0.0, 1.0, 0.0, 0.0, 1.0];
         let tri = Builder::new()
-            .set_switches("Q")
+            .set_switches("pDqQ")
             .add_polygon(&polygon)
             .build();
         let points = vec![
@@ -777,7 +777,7 @@ mod tests {
     fn point_inside_square() {
         let polygon = vec![0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
         let tri = Builder::new()
-            .set_switches("Q")
+            .set_switches("pDqQ")
             .add_polygon(&polygon)
             .build();
         let points = vec![
@@ -804,7 +804,7 @@ mod tests {
     fn point_outside_square() {
         let polygon = vec![0.0, 0.0, 1.0, 0.0, 1.0, 1.0, 0.0, 1.0];
         let tri = Builder::new()
-            .set_switches("Q")
+            .set_switches("pDqQ")
             .add_polygon(&polygon)
             .build();
         let points = vec![
@@ -827,7 +827,7 @@ mod tests {
     }
 
     #[test]
-    fn square_intersection() {
+    fn rectangles_intersection() {
         let polygon = vec![
             1.0804720876503242,
             9.784116583159095,
@@ -842,7 +842,7 @@ mod tests {
         ];
 
         let tri = Builder::new()
-            .set_switches("Q")
+            .set_switches("pDqQ")
             .add_polygon(&polygon)
             .build();
 
@@ -858,7 +858,7 @@ mod tests {
         points_outside.iter().for_each(|point| {
             assert!(
                 !tri.is_point_inside(point),
-                "\nPoint {:?} should be outside square\n",
+                "\nPoint {:?} should be outside rectangle\n",
                 point
             )
         });
@@ -866,7 +866,85 @@ mod tests {
         points_inside.iter().for_each(|point| {
             assert!(
                 tri.is_point_inside(point),
-                "\nPoint {:?} should be inside square\n",
+                "\nPoint {:?} should be inside rectangle\n",
+                point
+            )
+        });
+    }
+
+    #[test]
+    fn intersection_of_a_figure_and_a_rectangle() {
+        let polygon = vec![
+            35.97872543334961, // 1
+            -34.659114837646484,
+            35.97872543334961, // 2
+            -37.01911163330078,
+            33.9708251953125, // 3
+            -37.01911163330078,
+            33.9708251953125, // 4
+            -37.219112396240234,
+            34.07872772216797, // 5
+            -37.219112396240234,
+            34.0787277221679, // 6
+            -38.4352912902832,
+            33.15372467041016, // 7
+            -38.4352912902832,
+            33.153724670410156, // 8
+            -37.219112396240234,
+            33.25210189819336, // 9
+            -37.219112396240234,
+            33.25210189819336, // 10
+            -37.01911163330078,
+            32.90689468383789, // 11
+            -37.01911163330078,
+            32.90689468383789, // 12
+            -37.219112396240234,
+            33.003726959228516, // 13
+            -37.219112396240234,
+            33.00372695922856, // 14
+            -38.4352912902832,
+            32.0787277221679, // 15
+            -38.4352912902832,
+            32.07872772216797, // 16
+            -37.219112396240234,
+            32.193763732910156, // 17
+            -37.219112396240234,
+            32.19376373291015, // 18
+            -37.01911163330078,
+            30.50872802734375, // 19
+            -37.01911163330078,
+            30.50872802734375, // 20
+            -34.659114837646484,
+            35.97872543334961, // 21
+            -34.659114837646484,
+        ];
+
+        let tri = Builder::new()
+            .set_switches("pDqQ")
+            .add_polygon(&polygon)
+            .build();
+
+        let points_outside = vec![
+            [31.87872886657715, -38.24702072143555],
+            [31.87872886657715, -37.34701919555664],
+        ];
+        let points_inside = vec![
+            [32.07872772216797, -38.24702072143555],
+            [32.07872772216797, -37.34701919555664],
+        ];
+
+        points_outside.iter().for_each(|point| {
+            assert!(
+                !tri.is_point_inside(point),
+                "\nPoint {:?} should be outside figure\n",
+                point
+            )
+        });
+
+        points_inside.iter().for_each(|point| {
+            assert!(
+                tri.is_point_inside(point),
+                "\nPoint {:?} should be inside figure\n",
                 point
             )
         });
