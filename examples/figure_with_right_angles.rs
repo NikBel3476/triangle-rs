@@ -97,5 +97,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     root.present()?;
 
+    println!("Figure area = {:#?}", tri.area());
+
     Ok(())
 }

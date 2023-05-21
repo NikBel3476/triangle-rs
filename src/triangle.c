@@ -230,7 +230,7 @@
 /* If yours is not a Unix system, define the NO_TIMER compiler switch to     */
 /*   remove the Unix-specific timing code.                                   */
 
-#define NO_TIMER
+/* #define NO_TIMER */
 
 /* To insert lots of self-checks for internal errors, define the SELF_CHECK  */
 /*   symbol.  This will slow down the program significantly.  It is best to  */
@@ -244,7 +244,7 @@
 /*   TRILIBRARY symbol.  Read the file triangle.h for details on how to call */
 /*   the procedure triangulate() that results.                               */
 
-#define TRILIBRARY
+/* #define TRILIBRARY */
 
 /* It is possible to generate a smaller version of Triangle using one or     */
 /*   both of the following symbols.  Define the REDUCED symbol to eliminate  */
@@ -256,8 +256,8 @@
 /*   generating an object library (triangle.o) by defining the TRILIBRARY    */
 /*   symbol.                                                                 */
 
-#define REDUCED
-#define CDT_ONLY
+/* #define REDUCED */
+/* #define CDT_ONLY */
 
 /* On some machines, my exact arithmetic routines might be defeated by the   */
 /*   use of internal extended precision floating-point registers.  The best  */
@@ -277,8 +277,8 @@
 /*   Floating-Point Arithmetic and Fast Robust Geometric Predicates" (also   */
 /*   available as Section 6.6 of my dissertation).                           */
 
-//#define CPU86
-//#define LINUX
+/* #define CPU86 */
+/* #define LINUX */
 
 #define INEXACT /* Nothing */
 /* #define INEXACT volatile */

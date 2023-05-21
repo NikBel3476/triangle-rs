@@ -4,10 +4,19 @@ fn main() {
     let files = ["src/triangle.c"];
     let headers_dirs = ["src"];
 
-    cc::Build::new()
+    let mut builder = cc::Build::new();
+    builder
         .files(files.iter())
         .includes(headers_dirs.iter())
+        .define("TRILIBRARY", None)
         .warnings(true)
-        .extra_warnings(true)
-        .compile("triangle.a");
+        .extra_warnings(true);
+
+    if cfg!(windows) {
+        builder.define("NO_TIMER", None).define("CPU86", None);
+    } else {
+        builder.define("LINUX", None);
+    }
+
+    builder.compile("triangle.a");
 }

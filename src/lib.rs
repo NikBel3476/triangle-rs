@@ -3,6 +3,7 @@
 use rayon::prelude::*;
 use serde::Serialize;
 use serde_pickle as pkl;
+use std::ffi::{c_char, c_int};
 use std::{error::Error, ffi::CString, fmt, fs::File, path::Path};
 
 //include!("bindings.rs");
@@ -12,27 +13,27 @@ use std::{error::Error, ffi::CString, fmt, fs::File, path::Path};
 pub struct triangulateio {
     pub pointlist: *mut f64,
     pub pointattributelist: *mut f64,
-    pub pointmarkerlist: *mut ::std::os::raw::c_int,
-    pub numberofpoints: ::std::os::raw::c_int,
-    pub numberofpointattributes: ::std::os::raw::c_int,
-    pub trianglelist: *mut ::std::os::raw::c_int,
+    pub pointmarkerlist: *mut c_int,
+    pub numberofpoints: c_int,
+    pub numberofpointattributes: c_int,
+    pub trianglelist: *mut c_int,
     pub triangleattributelist: *mut f64,
     pub trianglearealist: *mut f64,
-    pub neighborlist: *mut ::std::os::raw::c_int,
-    pub numberoftriangles: ::std::os::raw::c_int,
-    pub numberofcorners: ::std::os::raw::c_int,
-    pub numberoftriangleattributes: ::std::os::raw::c_int,
-    pub segmentlist: *mut ::std::os::raw::c_int,
-    pub segmentmarkerlist: *mut ::std::os::raw::c_int,
-    pub numberofsegments: ::std::os::raw::c_int,
+    pub neighborlist: *mut c_int,
+    pub numberoftriangles: c_int,
+    pub numberofcorners: c_int,
+    pub numberoftriangleattributes: c_int,
+    pub segmentlist: *mut c_int,
+    pub segmentmarkerlist: *mut c_int,
+    pub numberofsegments: c_int,
     pub holelist: *mut f64,
-    pub numberofholes: ::std::os::raw::c_int,
+    pub numberofholes: c_int,
     pub regionlist: *mut f64,
-    pub numberofregions: ::std::os::raw::c_int,
-    pub edgelist: *mut ::std::os::raw::c_int,
-    pub edgemarkerlist: *mut ::std::os::raw::c_int,
+    pub numberofregions: c_int,
+    pub edgelist: *mut c_int,
+    pub edgemarkerlist: *mut c_int,
     pub normlist: *mut f64,
-    pub numberofedges: ::std::os::raw::c_int,
+    pub numberofedges: c_int,
 }
 impl Default for triangulateio {
     fn default() -> Self {
@@ -66,14 +67,14 @@ impl Default for triangulateio {
 
 extern "C" {
     pub fn triangulate(
-        arg1: *mut ::std::os::raw::c_char,
+        arg1: *mut c_char,
         arg2: *mut triangulateio,
         arg3: *mut triangulateio,
         arg4: *mut triangulateio,
     );
 }
 extern "C" {
-    pub fn trifree(memptr: *mut ::std::os::raw::c_int);
+    pub fn trifree(memptr: *mut c_int);
 }
 
 /// Delaunay triangulation
@@ -266,7 +267,7 @@ impl Delaunay {
                     .zip(values.iter())
                     .fold(0., |a, (w, v)| a + w * v)
             }
-            None => std::f64::NAN,
+            None => f64::NAN,
         }
     }
     /*
@@ -353,25 +354,15 @@ pub struct Builder {
 impl Builder {
     /// Creates a new Delaunay triangulation builder
     pub fn new() -> Self {
-        Self {
-            //triangulate_io: vec![],
-            switches: "z".to_owned(),
-            points: vec![],
-            segments: None,
-            n_segments: 032,
-            holes: None,
-            n_holes: 0i32,
-            boundary_marker: 1i32,
-            point_markers: None,
-            segment_markers: None,
-            tri_io: triangulateio::default(),
-        }
+        Default::default()
     }
+
     /// Sets the Delaunay mesh `x` and `y` vertices coordinates
-    pub fn add_nodes(mut self, nodes: &[f64]) -> Self {
+    pub fn add_nodes(&mut self, nodes: &[f64]) -> &mut Self {
         self.points.extend(nodes);
         self
     }
+
     pub fn set_segments(self, x: Vec<i32>, y: Vec<i32>) -> Self {
         assert_eq!(x.len(), y.len(), "x and y are not the same length.");
         //let mut data = self.triangulate_io;
@@ -388,6 +379,7 @@ impl Builder {
             ..self
         }
     }
+
     pub fn add_holes(&mut self, x: f64, y: f64) -> &mut Self {
         match self.holes {
             Some(ref mut h) => {
@@ -399,12 +391,14 @@ impl Builder {
         }
         self
     }
+
     /// Sets the Delaunay mesh vertices as [x0,y0,x1,y1,...]
     pub fn set_tri_points(self, points: Vec<f64>) -> Self {
         /*let mut data = self.triangulate_io;
         data.push(TriangulateIO::Points(points));*/
         Self { points, ..self }
     }
+
     /// Adds a closed polygon given its vertices [x1,y1,x2,y2,...]
     pub fn add_polygon(&mut self, vertices: &[f64]) -> &mut Self {
         //let boundary_marker = self.boundary_marker + 1;
@@ -426,23 +420,29 @@ impl Builder {
             None => vec![boundary_marker; n_segments as usize],
         };
         println!("point markers: {:?}", point_markers);*/
-        let segments_vertices = (0..n_segments).flat_map(|k| vec![a + k, a + (k + 1) % n_segments]);
+        let segments_vertices = (0..n_segments)
+            .flat_map(|k| vec![a + k, a + (k + 1) % n_segments])
+            .collect::<Vec<i32>>();
         match self.segments {
             Some(ref mut s) => {
                 s.extend(segments_vertices);
             }
             None => {
-                self.segments = Some(segments_vertices.collect::<Vec<i32>>());
+                self.segments = Some(segments_vertices);
             }
         };
         self.points.extend(vertices);
         self
     }
+
     /// Sets triangulation [switches](https://www.cs.cmu.edu/~quake/triangle.switch.html)
-    pub fn set_switches(mut self, switches: &str) -> Self {
-        self.switches = format!("z{}", switches);
-        self
+    pub fn set_switches(self, switches: &str) -> Self {
+        Self {
+            switches: format!("z{}", switches),
+            ..self
+        }
     }
+
     /// Compute the Delaunay mesh and returns a `Delaunay` structure
     pub fn build(&mut self) -> Delaunay {
         self.tri_io.numberofpoints = (self.points.len() / 2) as i32;
@@ -509,6 +509,25 @@ impl Builder {
         }
     }
 }
+
+impl Default for Builder {
+    fn default() -> Self {
+        Self {
+            //triangulate_io: vec![],
+            switches: "z".to_owned(),
+            points: vec![],
+            segments: None,
+            n_segments: 0i32,
+            holes: None,
+            n_holes: 0i32,
+            boundary_marker: 1i32,
+            point_markers: None,
+            segment_markers: None,
+            tri_io: triangulateio::default(),
+        }
+    }
+}
+
 impl From<Vec<f64>> for Builder {
     fn from(points: Vec<f64>) -> Self {
         Self {
@@ -533,7 +552,7 @@ impl From<&[f64]> for Builder {
             points: points.to_owned(),
             switches: "z".to_owned(),
             segments: None,
-            n_segments: 032,
+            n_segments: 0i32,
             holes: None,
             n_holes: 0i32,
             boundary_marker: 1i32,
