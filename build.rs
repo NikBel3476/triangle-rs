@@ -14,7 +14,8 @@ fn main() {
 
     if cfg!(windows) {
         builder.define("NO_TIMER", None).define("CPU86", None);
-    } else {
+    }
+    if cfg!(linux) {
         builder.define("LINUX", None);
     }
 

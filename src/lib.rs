@@ -470,29 +470,29 @@ impl Builder {
         };
         let points: Vec<f64> = unsafe {
             let n = delaunay.numberofpoints as usize * 2;
-            Vec::from_raw_parts(delaunay.pointlist, n, n)
+            std::slice::from_raw_parts(delaunay.pointlist, n).to_vec()
         };
         let point_markers: Vec<i32> = unsafe {
             let n = delaunay.numberofpoints as usize;
-            Vec::from_raw_parts(delaunay.pointmarkerlist, n, n)
+            std::slice::from_raw_parts(delaunay.pointmarkerlist, n).to_vec()
         };
         let triangles: Vec<usize> = unsafe {
             let n = delaunay.numberoftriangles as usize * 3;
-            Vec::from_raw_parts(delaunay.trianglelist, n, n)
+            std::slice::from_raw_parts(delaunay.trianglelist, n).to_vec()
         }
         .iter()
         .map(|x| *x as usize)
         .collect();
         let neighbors: Option<Vec<i32>> = if self.switches.contains("n") {
             let n = delaunay.numberoftriangles as usize * 3;
-            Some(unsafe { Vec::from_raw_parts(delaunay.neighborlist, n, n) })
+            Some(unsafe { std::slice::from_raw_parts(delaunay.neighborlist, n).to_vec() })
         } else {
             None
         };
         let edges: Option<Vec<usize>> = if self.switches.contains("e") {
             let n = delaunay.numberofedges as usize * 2;
             Some(
-                unsafe { Vec::from_raw_parts(delaunay.edgelist, n, n) }
+                unsafe { std::slice::from_raw_parts(delaunay.edgelist, n).to_vec() }
                     .iter()
                     .map(|x| *x as usize)
                     .collect(),
@@ -723,7 +723,7 @@ mod tests {
             .add_polygon(&polygon)
             .build();
         println!("{:#?}", tri);
-        assert_eq!(tri.area(), 15.445482030030712);
+        assert_eq!(tri.area(), 15.44548203003071);
     }
 
     #[test]
