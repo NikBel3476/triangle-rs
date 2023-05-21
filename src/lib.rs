@@ -157,39 +157,25 @@ impl Delaunay {
     pub fn triangle_areas(&self) -> Vec<f64> {
         let vertices: Vec<Vec<f64>> = self.vertex_iter().map(|x| x.to_vec()).collect();
         self.triangle_iter()
-            .map(|t| {
-                let (a, b, c) = (&vertices[t[0]], &vertices[t[1]], &vertices[t[2]]);
-                // 0.5 * ((a[0] - c[0]) * (b[1] - a[1]) - (a[0] - b[0]) * (c[1] - a[1])).abs()
-                0.5 * ((a[0] - c[0]) * (b[1] - c[1]) - (b[0] - c[0]) * (a[1] - c[1])).abs()
-            })
+            .map(|t| self.triangle_area(&vertices[t[0]], &vertices[t[1]], &vertices[t[2]]))
             .collect()
     }
+
+    fn triangle_area(&self, a: &[f64], b: &[f64], c: &[f64]) -> f64 {
+        0.5 * ((a[0] - c[0]) * (b[1] - c[1]) - (b[0] - c[0]) * (a[1] - c[1])).abs()
+    }
+
     /// Returns the area covered by the mesh as the sum of the triangle area
     pub fn area(&self) -> f64 {
-        // let vertices: Vec<Vec<f64>> = self.vertex_iter().map(|x| x.to_vec()).collect();
-        // self.triangle_iter().fold(0., |s, triangle| {
-        //     let (a, b, c) = (
-        //         &vertices[triangle[0]],
-        //         &vertices[triangle[1]],
-        //         &vertices[triangle[2]],
-        //     );
-        //     s + 0.5 * ((a[0] - c[0]) * (b[1] - a[1]) - (a[0] - b[0]) * (c[1] - a[1])).abs()
-        // })
-        // self.triangle_vertex_iter().fold(0.0, |area, triangle| {
-        //     let (a, b, c) = (triangle[0], triangle[1], triangle[2]);
-        //     let triangle_area = 0.5 * (a.0 * (b.1 - c.1) + b.0 * (c.1 - a.1) + c.0 * (a.1 - b.1));
-        //     area + triangle_area
-        // })
-        self.triangle_areas()
-            .iter()
-            .fold(0.0, |area, triangle_area| area + triangle_area)
+        self.triangle_areas().iter().sum()
     }
     /// Returns the area covered by the mesh as the sum of the Delaunay triangles area
     pub fn mesh_area(&self) -> f64 {
         let vertices: Vec<Vec<f64>> = self.vertex_iter().map(|x| x.to_vec()).collect();
         self.triangle_iter().fold(0., |s, t| {
             let (a, b, c) = (&vertices[t[0]], &vertices[t[1]], &vertices[t[2]]);
-            s + 0.5 * ((a[0] - c[0]) * (b[1] - a[1]) - (a[0] - b[0]) * (c[1] - a[1])).abs()
+            // s + 0.5 * ((a[0] - c[0]) * (b[1] - a[1]) - (a[0] - b[0]) * (c[1] - a[1])).abs()
+            s + self.triangle_area(a, b, c)
         })
     }
     pub fn average(&self, vertices: &[[f64; 3]], data: &[f64]) -> f64 {
