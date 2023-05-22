@@ -456,16 +456,16 @@ impl Builder {
             self.tri_io.holelist = h.as_mut_ptr();
         }
         //use TriangulateIO::*;
-        let mut delaunay: triangulateio = unsafe { std::mem::zeroed() };
+        let mut delaunay = triangulateio::default();
         //        println!("Delaunay triangulation with  switches: {}", self.switches);
         let switches = CString::new(self.switches.as_str()).unwrap();
         unsafe {
-            let mut empty_tri: triangulateio = std::mem::zeroed();
+            let empty_tri = std::ptr::null_mut();
             triangulate(
                 switches.into_raw(),
                 &mut self.tri_io,
                 &mut delaunay,
-                &mut empty_tri,
+                empty_tri,
             )
         };
         let points: Vec<f64> = unsafe {
