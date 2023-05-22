@@ -260,13 +260,8 @@
 #ifndef TRIANGLE_H_INCLUDED
 #define TRIANGLE_H_INCLUDED
 
-#define ANSI_DECLARATORS
+//#define ANSI_DECLARATORS
 #define VOID void
-#ifdef SINGLE
-#define REAL float
-#else
-#define REAL double
-#endif
 
 struct triangulateio {
   REAL *pointlist;                                               /* In / out */

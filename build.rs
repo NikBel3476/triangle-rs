@@ -8,15 +8,16 @@ fn main() {
     builder
         .files(files.iter())
         .includes(headers_dirs.iter())
-        .define("TRILIBRARY", None)
         .warnings(true)
         .extra_warnings(true);
 
     if cfg!(windows) {
-        builder.define("NO_TIMER", None).define("CPU86", None);
+        builder.define("CPU86", None);
     }
     if cfg!(linux) {
         builder.define("LINUX", None);
+    } else {
+        builder.define("NO_TIMER", None);
     }
 
     builder.compile("triangle.a");

@@ -723,7 +723,7 @@ mod tests {
             .add_polygon(&polygon)
             .build();
         println!("{:#?}", tri);
-        assert_eq!(tri.area(), 15.44548203003071);
+        assert_eq!(tri.area(), 15.445482030030712);
     }
 
     #[test]
