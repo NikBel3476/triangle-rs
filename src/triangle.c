@@ -640,7 +640,7 @@ struct memorypool {
   int pathitemsleft;
 };
 
-
+// FIXME: not thread-safe(it is neccessary to remove global variables)
 /* Global constants.                                                         */
 
 REAL splitter;       /* Used to split REAL factors for exact multiplication. */
