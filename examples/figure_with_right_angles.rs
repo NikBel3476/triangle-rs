@@ -48,7 +48,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     ];
 
     let tri = Builder::new()
-        .set_switches("pDq")
+        .set_switches("p")
         .add_polygon(&polygon)
         .build();
 
@@ -96,6 +96,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .draw()?;
 
     root.present()?;
+
+    println!("Figure area = {:#?}", tri.area());
 
     Ok(())
 }
