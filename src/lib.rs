@@ -78,7 +78,7 @@ extern "C" {
 }
 
 /// Delaunay triangulation
-#[derive(Default, Debug, Serialize)]
+#[derive(Default, Debug, Serialize, Clone)]
 pub struct Delaunay {
     /// Triangulation vertices as [x0,y0,x1,y1,...]
     pub points: Vec<f64>,
@@ -470,29 +470,29 @@ impl Builder {
         };
         let points: Vec<f64> = unsafe {
             let n = delaunay.numberofpoints as usize * 2;
-            std::slice::from_raw_parts(delaunay.pointlist, n).to_vec()
+            Vec::from_raw_parts(delaunay.pointlist, n, n)
         };
         let point_markers: Vec<i32> = unsafe {
             let n = delaunay.numberofpoints as usize;
-            std::slice::from_raw_parts(delaunay.pointmarkerlist, n).to_vec()
+            Vec::from_raw_parts(delaunay.pointmarkerlist, n, n)
         };
         let triangles: Vec<usize> = unsafe {
             let n = delaunay.numberoftriangles as usize * 3;
-            std::slice::from_raw_parts(delaunay.trianglelist, n).to_vec()
+            Vec::from_raw_parts(delaunay.trianglelist, n, n)
         }
         .iter()
         .map(|x| *x as usize)
         .collect();
-        let neighbors: Option<Vec<i32>> = if self.switches.contains("n") {
+        let neighbors: Option<Vec<i32>> = if self.switches.contains('n') {
             let n = delaunay.numberoftriangles as usize * 3;
-            Some(unsafe { std::slice::from_raw_parts(delaunay.neighborlist, n).to_vec() })
+            Some(unsafe { Vec::from_raw_parts(delaunay.neighborlist, n, n) })
         } else {
             None
         };
-        let edges: Option<Vec<usize>> = if self.switches.contains("e") {
+        let edges: Option<Vec<usize>> = if self.switches.contains('e') {
             let n = delaunay.numberofedges as usize * 2;
             Some(
-                unsafe { std::slice::from_raw_parts(delaunay.edgelist, n).to_vec() }
+                unsafe { Vec::from_raw_parts(delaunay.edgelist, n, n) }
                     .iter()
                     .map(|x| *x as usize)
                     .collect(),
