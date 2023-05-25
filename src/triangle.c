@@ -1346,8 +1346,8 @@ int minus1mod3[3] = {2, 0, 1};
  * @param REAL area;                                      The area of the triangle.
  * @return
  */
-int triunsuitable(vertex triorg, vertex tridest, vertex triapex, REAL area)
-
+extern int triunsuitable(vertex triorg, vertex tridest, vertex triapex, REAL area);
+/*int triunsuitable(vertex triorg, vertex tridest, vertex triapex, REAL area)
 {
   REAL dxoa, dxda, dxod;
   REAL dyoa, dyda, dyod;
@@ -1360,11 +1360,11 @@ int triunsuitable(vertex triorg, vertex tridest, vertex triapex, REAL area)
   dyda = tridest[1] - triapex[1];
   dxod = triorg[0] - tridest[0];
   dyod = triorg[1] - tridest[1];
-  /* Find the squares of the lengths of the triangle's three edges. */
+  *//* Find the squares of the lengths of the triangle's three edges. *//*
   oalen = dxoa * dxoa + dyoa * dyoa;
   dalen = dxda * dxda + dyda * dyda;
   odlen = dxod * dxod + dyod * dyod;
-  /* Find the square of the length of the longest edge. */
+  *//* Find the square of the length of the longest edge. *//*
   maxlen = (dalen > oalen) ? dalen : oalen;
   maxlen = (odlen > maxlen) ? odlen : maxlen;
 
@@ -1373,7 +1373,7 @@ int triunsuitable(vertex triorg, vertex tridest, vertex triapex, REAL area)
   } else {
     return 0;
   }
-}
+}*/
 
 /**                                                                         **/
 /**                                                                         **/

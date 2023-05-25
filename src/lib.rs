@@ -8,6 +8,8 @@ use std::{error::Error, ffi::CString, fmt, fs::File, path::Path};
 
 //include!("bindings.rs");
 
+mod triangle;
+
 #[repr(C)]
 #[derive(Debug, Copy, Clone)]
 pub struct triangulateio {
@@ -72,8 +74,7 @@ extern "C" {
         arg3: *mut triangulateio,
         arg4: *mut triangulateio,
     );
-}
-extern "C" {
+
     pub fn trifree(memptr: *mut c_int);
 }
 
@@ -535,7 +536,7 @@ impl From<Vec<f64>> for Builder {
             points,
             switches: "z".to_owned(),
             segments: None,
-            n_segments: 032,
+            n_segments: 0i32,
             holes: None,
             n_holes: 0i32,
             boundary_marker: 1i32,
