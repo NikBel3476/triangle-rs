@@ -1850,7 +1850,8 @@ void printsubseg(struct mesh *m, struct behavior *b, struct osub *s)
 /*                                                                           */
 /*****************************************************************************/
 
-void poolzero(struct memorypool *pool)
+extern void poolzero(struct memorypool *pool);
+/*void poolzero(struct memorypool *pool)
 
 {
   pool->firstblock = (VOID **) NULL;
@@ -1867,7 +1868,7 @@ void poolzero(struct memorypool *pool)
   pool->maxitems = 0;
   pool->unallocateditems = 0;
   pool->pathitemsleft = 0;
-}
+}*/
 
 /*****************************************************************************/
 /*                                                                           */
