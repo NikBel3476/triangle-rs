@@ -184,7 +184,7 @@ static randomseed: u64 = 0; /* Current random number seed. */
 /* Mesh data structure.  Triangle operates on only one mesh, but the mesh    */
 /*   structure is used (instead of global variables) to allow reentrancy.    */
 #[repr(C)]
-struct mesh {
+pub struct mesh {
     /* Variables used to allocate memory for triangles, subsegments, vertices,   */
     /*   viri (triangles being eaten), encroached segments, bad (skinny or too   */
     /*   large) triangles, and splay tree nodes.                                 */
@@ -265,7 +265,7 @@ struct mesh {
 /* Data structure for command line switches and file names.  This structure  */
 /*   is used (instead of global variables) to allow reentrancy.              */
 #[repr(C)]
-struct behavior {
+pub struct behavior {
     /* Switches for the triangulator.                                            */
     /*   poly: -p switch.  refine: -r switch.                                    */
     /*   quality: -q switch.                                                     */
@@ -406,4 +406,374 @@ pub extern "C" fn poolzero(pool: &mut memorypool) {
     pool.maxitems = 0;
     pool.unallocateditems = 0;
     pool.pathitemsleft = 0;
+}
+
+/*****************************************************************************/
+/*                                                                           */
+/*  poolrestart()   Deallocate all items in a pool.                          */
+/*                                                                           */
+/*  The pool is returned to its starting state, except that no memory is     */
+/*  freed to the operating system.  Rather, the previously allocated blocks  */
+/*  are ready to be reused.                                                  */
+/*                                                                           */
+/*****************************************************************************/
+// #[no_mangle]
+// pub extern "C" fn poolrestart(pool: &mut memorypool) {
+//     let mut alignptr = std::ptr::null_mut();
+//
+//     pool.items = 0;
+//     pool.maxitems = 0;
+//
+//     /* Set the currently active block. */
+//     pool.nowblock = pool.firstblock;
+//     /* Find the first item in the pool.  Increment by the size of (VOID *). */
+//     alignptr = unsafe { pool.nowblock.add(1) };
+//     /* Align the item on an `alignbytes'-byte boundary. */
+//     pool.nextitem = unsafe {
+//         alignptr
+//             .add(pool.alignbytes as usize)
+//             .sub(alignptr as usize % pool.alignbytes as usize) as *mut c_void
+//     };
+//     /* There are lots of unallocated items left in this block. */
+//     pool.unallocateditems = pool.itemsfirstblock;
+//     /* The stack of deallocated items is empty. */
+//     pool.deaditemstack = std::ptr::null_mut();
+// }
+
+/*****************************************************************************/
+/*                                                                           */
+/*  poolinit()   Initialize a pool of memory for allocation of items.        */
+/*                                                                           */
+/*  This routine initializes the machinery for allocating items.  A `pool'   */
+/*  is created whose records have size at least `bytecount'.  Items will be  */
+/*  allocated in `itemcount'-item blocks.  Each item is assumed to be a      */
+/*  collection of words, and either pointers or floating-point values are    */
+/*  assumed to be the "primary" word type.  (The "primary" word type is used */
+/*  to determine alignment of items.)  If `alignment' isn't zero, all items  */
+/*  will be `alignment'-byte aligned in memory.  `alignment' must be either  */
+/*  a multiple or a factor of the primary word size; powers of two are safe. */
+/*  `alignment' is normally used to create a few unused bits at the bottom   */
+/*  of each item's pointer, in which information may be stored.              */
+/*                                                                           */
+/*  Don't change this routine unless you understand it.                      */
+/*                                                                           */
+/*****************************************************************************/
+// #[no_mangle]
+// pub extern "C" fn poolinit(
+//     pool: &mut memorypool,
+//     bytecount: i32,
+//     itemcount: i32,
+//     firstitemcount: i32,
+//     alignment: i32,
+// ) {
+//     /* Find the proper alignment, which must be at least as large as:   */
+//     /*   - The parameter `alignment'.                                   */
+//     /*   - sizeof(VOID *), so the stack of dead items can be maintained */
+//     /*       without unaligned accesses.                                */
+//     if alignment > std::mem::size_of::<c_void>() as i32 {
+//         pool.alignbytes = alignment;
+//     } else {
+//         pool.alignbytes = std::mem::size_of::<c_void>() as i32;
+//     }
+//     pool.itembytes = ((bytecount - 1) / pool.alignbytes + 1) * pool.alignbytes;
+//     pool.itemsperblock = itemcount;
+//     if firstitemcount == 0 {
+//         pool.itemsfirstblock = itemcount;
+//     } else {
+//         pool.itemsfirstblock = firstitemcount;
+//     }
+//
+//     /* Allocate a block of items.  Space for `itemsfirstblock' items and one  */
+//     /*   pointer (to point to the next block) are allocated, as well as space */
+//     /*   to ensure alignment of the items.                                    */
+//     pool.firstblock = trimalloc(
+//         pool.itemsfirstblock * pool.itembytes
+//             + std::mem::size_of::<c_void>() as i32
+//             + pool.alignbytes,
+//     );
+//     /* Set the next block pointer to NULL. */
+//     pool.firstblock = std::ptr::null_mut();
+//     poolrestart(pool);
+// }
+
+/* Which of the following two methods of finding the absolute values is      */
+/*   fastest is compiler-dependent.  A few compilers can inline and optimize */
+/*   the fabs() call; but most will incur the overhead of a function call,   */
+/*   which is disastrously slow.  A faster way on IEEE machines might be to  */
+/*   mask the appropriate bit, but that's difficult to do in C without       */
+/*   forcing the value to be stored to memory (rather than be kept in the    */
+/*   register to which the optimizer assigned it).                           */
+#[no_mangle]
+#[inline]
+pub extern "C" fn Absolute(a: REAL) -> REAL {
+    a.abs()
+}
+
+/*****************************************************************************/
+/*                                                                           */
+/*  estimate()   Produce a one-word estimate of an expansion's value.        */
+/*                                                                           */
+/*  See my Robust Predicates paper for details.                              */
+/*                                                                           */
+/*****************************************************************************/
+// #[no_mangle]
+// pub extern "C" fn estimate(elen: i32, e: &[REAL]) -> REAL {
+//     e[0..elen as usize].iter().sum()
+// }
+
+extern "C" {
+    fn counterclockwiseadapt(pa: &[REAL], pb: &[REAL], pc: &[REAL], detsum: REAL) -> REAL;
+}
+
+// #[no_mangle]
+// pub extern "C" fn counterclockwise(
+//     m: &mut mesh,
+//     b: &behavior,
+//     pa: &[REAL],
+//     pb: &[REAL],
+//     pc: &[REAL],
+// ) -> REAL {
+//     let mut detsum = 0.0;
+//
+//     m.counterclockcount += m.counterclockcount;
+//
+//     let detleft = (pa[0] - pc[0]) * (pb[1] - pc[1]);
+//     let detright = (pa[1] - pc[1]) * (pb[0] - pc[0]);
+//     let det = detleft - detright;
+//
+//     if b.noexact != 0 {
+//         return det;
+//     }
+//
+//     if detleft > 0.0 {
+//         if detright <= 0.0 {
+//             return det;
+//         } else {
+//             detsum = detleft + detright;
+//         }
+//     } else if detleft < 0.0 {
+//         if detright >= 0.0 {
+//             return det;
+//         } else {
+//             detsum = -detleft - detright;
+//         }
+//     } else {
+//         return det;
+//     }
+//
+//     let errbound = ccwerrboundA * detsum;
+//     if (det >= errbound) || (-det >= errbound) {
+//         return det;
+//     }
+//
+//     unsafe { counterclockwiseadapt(pa, pb, pc, detsum) }
+// }
+
+extern "C" {
+    fn incircleadapt(
+        pa: *mut REAL,
+        pb: *mut REAL,
+        pc: *mut REAL,
+        pd: *mut REAL,
+        permanent: REAL,
+    ) -> REAL;
+}
+
+extern "C" {
+    fn incircle(
+        m: &mut mesh,
+        b: &behavior,
+        pa: *mut REAL,
+        pb: *mut REAL,
+        pc: *mut REAL,
+        pd: *mut REAL,
+    ) -> REAL;
+}
+
+// #[no_mangle]
+// pub extern "C" fn incircle(
+//     m: &mut mesh,
+//     b: &behavior,
+//     pa: &mut [REAL],
+//     pb: &mut [REAL],
+//     pc: &mut [REAL],
+//     pd: &mut [REAL],
+// ) -> REAL {
+//     m.incirclecount += 1;
+//
+//     let adx = pa[0] - pd[0];
+//     let bdx = pb[0] - pd[0];
+//     let cdx = pc[0] - pd[0];
+//     let ady = pa[1] - pd[1];
+//     let bdy = pb[1] - pd[1];
+//     let cdy = pc[1] - pd[1];
+//
+//     let bdxcdy = bdx * cdy;
+//     let cdxbdy = cdx * bdy;
+//     let alift = adx * adx + ady * ady;
+//
+//     let cdxady = cdx * ady;
+//     let adxcdy = adx * cdy;
+//     let blift = bdx * bdx + bdy * bdy;
+//
+//     let adxbdy = adx * bdy;
+//     let bdxady = bdx * ady;
+//     let clift = cdx * cdx + cdy * cdy;
+//
+//     let det = alift * (bdxcdy - cdxbdy) + blift * (cdxady - adxcdy) + clift * (adxbdy - bdxady);
+//
+//     if b.noexact != 0 {
+//         return det;
+//     }
+//
+//     let permanent = (Absolute(bdxcdy) + Absolute(cdxbdy)) * alift
+//         + (Absolute(cdxady) + Absolute(adxcdy)) * blift
+//         + (Absolute(adxbdy) + Absolute(bdxady)) * clift;
+//     let errbound = iccerrboundA * permanent;
+//     if (det > errbound) || (-det > errbound) {
+//         return det;
+//     }
+//
+//     unsafe {
+//         incircleadapt(
+//             pa.as_mut_ptr(),
+//             pb.as_mut_ptr(),
+//             pc.as_mut_ptr(),
+//             pd.as_mut_ptr(),
+//             permanent,
+//         )
+//     }
+// }
+
+extern "C" {
+    fn orient3dadapt(
+        pa: *mut REAL,
+        pb: *mut REAL,
+        pc: *mut REAL,
+        pd: *mut REAL,
+        aheight: REAL,
+        bheight: REAL,
+        cheight: REAL,
+        dheight: REAL,
+        permanent: REAL,
+    ) -> REAL;
+}
+
+#[no_mangle]
+pub extern "C" fn orient3d(
+    m: &mut mesh,
+    b: &behavior,
+    pa: &mut [REAL],
+    pb: &mut [REAL],
+    pc: &mut [REAL],
+    pd: &mut [REAL],
+    aheight: REAL,
+    bheight: REAL,
+    cheight: REAL,
+    dheight: REAL,
+) -> REAL {
+    m.orient3dcount += 1;
+
+    let adx = pa[0] - pd[0];
+    let bdx = pb[0] - pd[0];
+    let cdx = pc[0] - pd[0];
+    let ady = pa[1] - pd[1];
+    let bdy = pb[1] - pd[1];
+    let cdy = pc[1] - pd[1];
+    let adheight = aheight - dheight;
+    let bdheight = bheight - dheight;
+    let cdheight = cheight - dheight;
+
+    let bdxcdy = bdx * cdy;
+    let cdxbdy = cdx * bdy;
+
+    let cdxady = cdx * ady;
+    let adxcdy = adx * cdy;
+
+    let adxbdy = adx * bdy;
+    let bdxady = bdx * ady;
+
+    let det =
+        adheight * (bdxcdy - cdxbdy) + bdheight * (cdxady - adxcdy) + cdheight * (adxbdy - bdxady);
+
+    if b.noexact != 0 {
+        return det;
+    }
+
+    let permanent = (Absolute(bdxcdy) + Absolute(cdxbdy)) * Absolute(adheight)
+        + (Absolute(cdxady) + Absolute(adxcdy)) * Absolute(bdheight)
+        + (Absolute(adxbdy) + Absolute(bdxady)) * Absolute(cdheight);
+    let errbound = o3derrboundA * permanent;
+    if (det > errbound) || (-det > errbound) {
+        return det;
+    }
+
+    unsafe {
+        orient3dadapt(
+            pa.as_mut_ptr(),
+            pb.as_mut_ptr(),
+            pc.as_mut_ptr(),
+            pd.as_mut_ptr(),
+            aheight,
+            bheight,
+            cheight,
+            dheight,
+            permanent,
+        )
+    }
+}
+
+/*****************************************************************************/
+/*                                                                           */
+/*  nonregular()   Return a positive value if the point pd is incompatible   */
+/*                 with the circle or plane passing through pa, pb, and pc   */
+/*                 (meaning that pd is inside the circle or below the        */
+/*                 plane); a negative value if it is compatible; and zero if */
+/*                 the four points are cocircular/coplanar.  The points pa,  */
+/*                 pb, and pc must be in counterclockwise order, or the sign */
+/*                 of the result will be reversed.                           */
+/*                                                                           */
+/*  If the -w switch is used, the points are lifted onto the parabolic       */
+/*  lifting map, then they are dropped according to their weights, then the  */
+/*  3D orientation test is applied.  If the -W switch is used, the points'   */
+/*  heights are already provided, so the 3D orientation test is applied      */
+/*  directly.  If neither switch is used, the incircle test is applied.      */
+/*                                                                           */
+/*****************************************************************************/
+#[no_mangle]
+pub extern "C" fn nonregular(
+    m: &mut mesh,
+    b: &behavior,
+    pa: &mut [REAL],
+    pb: &mut [REAL],
+    pc: &mut [REAL],
+    pd: &mut [REAL],
+) -> REAL {
+    if b.weighted == 0 {
+        unsafe {
+            incircle(
+                m,
+                b,
+                pa.as_mut_ptr(),
+                pb.as_mut_ptr(),
+                pc.as_mut_ptr(),
+                pd.as_mut_ptr(),
+            )
+        }
+    } else if b.weighted == 1 {
+        orient3d(
+            m,
+            b,
+            pa,
+            pb,
+            pc,
+            pd,
+            pa[0] * pa[0] + pa[1] * pa[1] - pa[2],
+            pb[0] * pb[0] + pb[1] * pb[1] - pb[2],
+            pc[0] * pc[0] + pc[1] * pc[1] - pc[2],
+            pd[0] * pd[0] + pd[1] * pd[1] - pd[2],
+        )
+    } else {
+        orient3d(m, b, pa, pb, pc, pd, pa[2], pb[2], pc[2], pd[2])
+    }
 }

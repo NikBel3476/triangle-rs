@@ -1880,6 +1880,7 @@ extern void poolzero(struct memorypool *pool);
 /*                                                                           */
 /*****************************************************************************/
 
+//extern void poolrestart(struct memorypool *pool);
 void poolrestart(struct memorypool *pool)
 {
   unsigned long long alignptr;
@@ -2594,7 +2595,8 @@ void makesubseg(struct mesh *m, struct osub *newsubseg)
 /*   forcing the value to be stored to memory (rather than be kept in the    */
 /*   register to which the optimizer assigned it).                           */
 
-#define Absolute(a)  ((a) >= 0.0 ? (a) : -(a))
+extern REAL Absolute(REAL a);
+//#define Absolute(a)  ((a) >= 0.0 ? (a) : -(a))
 /* #define Absolute(a)  fabs(a) */
 
 /* Many of the operations are broken up into two pieces, a main part that    */
@@ -2949,6 +2951,7 @@ int scale_expansion_zeroelim(int elen, REAL *e, REAL b, REAL *h)
 /*                                                                           */
 /*****************************************************************************/
 
+//extern REAL estimate(int elen, REAL *e);
 REAL estimate(int elen, REAL *e)
 {
   REAL Q;
@@ -3061,6 +3064,8 @@ REAL counterclockwiseadapt(vertex pa, vertex pb, vertex pc, REAL detsum)
   return(D[Dlength - 1]);
 }
 
+//extern REAL counterclockwise(struct mesh *m, struct behavior *b,
+//                      vertex pa, vertex pb, vertex pc);
 REAL counterclockwise(struct mesh *m, struct behavior *b,
                       vertex pa, vertex pb, vertex pc)
 {
@@ -3689,6 +3694,8 @@ REAL incircleadapt(vertex pa, vertex pb, vertex pc, vertex pd, REAL permanent)
   return finnow[finlength - 1];
 }
 
+//extern REAL incircle(struct mesh *m, struct behavior *b,
+//              vertex pa, vertex pb, vertex pc, vertex pd);
 REAL incircle(struct mesh *m, struct behavior *b,
               vertex pa, vertex pb, vertex pc, vertex pd)
 {
@@ -4170,55 +4177,58 @@ REAL orient3dadapt(vertex pa, vertex pb, vertex pc, vertex pd,
   return finnow[finlength - 1];
 }
 
-REAL orient3d(struct mesh *m, struct behavior *b,
+extern REAL orient3d(struct mesh *m, struct behavior *b,
               vertex pa, vertex pb, vertex pc, vertex pd,
-              REAL aheight, REAL bheight, REAL cheight, REAL dheight)
-{
-  REAL adx, bdx, cdx, ady, bdy, cdy, adheight, bdheight, cdheight;
-  REAL bdxcdy, cdxbdy, cdxady, adxcdy, adxbdy, bdxady;
-  REAL det;
-  REAL permanent, errbound;
-
-  m->orient3dcount++;
-
-  adx = pa[0] - pd[0];
-  bdx = pb[0] - pd[0];
-  cdx = pc[0] - pd[0];
-  ady = pa[1] - pd[1];
-  bdy = pb[1] - pd[1];
-  cdy = pc[1] - pd[1];
-  adheight = aheight - dheight;
-  bdheight = bheight - dheight;
-  cdheight = cheight - dheight;
-
-  bdxcdy = bdx * cdy;
-  cdxbdy = cdx * bdy;
-
-  cdxady = cdx * ady;
-  adxcdy = adx * cdy;
-
-  adxbdy = adx * bdy;
-  bdxady = bdx * ady;
-
-  det = adheight * (bdxcdy - cdxbdy)
-      + bdheight * (cdxady - adxcdy)
-      + cdheight * (adxbdy - bdxady);
-
-  if (b->noexact) {
-    return det;
-  }
-
-  permanent = (Absolute(bdxcdy) + Absolute(cdxbdy)) * Absolute(adheight)
-            + (Absolute(cdxady) + Absolute(adxcdy)) * Absolute(bdheight)
-            + (Absolute(adxbdy) + Absolute(bdxady)) * Absolute(cdheight);
-  errbound = o3derrboundA * permanent;
-  if ((det > errbound) || (-det > errbound)) {
-    return det;
-  }
-
-  return orient3dadapt(pa, pb, pc, pd, aheight, bheight, cheight, dheight,
-                       permanent);
-}
+              REAL aheight, REAL bheight, REAL cheight, REAL dheight);
+//REAL orient3d(struct mesh *m, struct behavior *b,
+//              vertex pa, vertex pb, vertex pc, vertex pd,
+//              REAL aheight, REAL bheight, REAL cheight, REAL dheight)
+//{
+//  REAL adx, bdx, cdx, ady, bdy, cdy, adheight, bdheight, cdheight;
+//  REAL bdxcdy, cdxbdy, cdxady, adxcdy, adxbdy, bdxady;
+//  REAL det;
+//  REAL permanent, errbound;
+//
+//  m->orient3dcount++;
+//
+//  adx = pa[0] - pd[0];
+//  bdx = pb[0] - pd[0];
+//  cdx = pc[0] - pd[0];
+//  ady = pa[1] - pd[1];
+//  bdy = pb[1] - pd[1];
+//  cdy = pc[1] - pd[1];
+//  adheight = aheight - dheight;
+//  bdheight = bheight - dheight;
+//  cdheight = cheight - dheight;
+//
+//  bdxcdy = bdx * cdy;
+//  cdxbdy = cdx * bdy;
+//
+//  cdxady = cdx * ady;
+//  adxcdy = adx * cdy;
+//
+//  adxbdy = adx * bdy;
+//  bdxady = bdx * ady;
+//
+//  det = adheight * (bdxcdy - cdxbdy)
+//      + bdheight * (cdxady - adxcdy)
+//      + cdheight * (adxbdy - bdxady);
+//
+//  if (b->noexact) {
+//    return det;
+//  }
+//
+//  permanent = (Absolute(bdxcdy) + Absolute(cdxbdy)) * Absolute(adheight)
+//            + (Absolute(cdxady) + Absolute(adxcdy)) * Absolute(bdheight)
+//            + (Absolute(adxbdy) + Absolute(bdxady)) * Absolute(cdheight);
+//  errbound = o3derrboundA * permanent;
+//  if ((det > errbound) || (-det > errbound)) {
+//    return det;
+//  }
+//
+//  return orient3dadapt(pa, pb, pc, pd, aheight, bheight, cheight, dheight,
+//                       permanent);
+//}
 
 /*****************************************************************************/
 /*                                                                           */
@@ -4238,21 +4248,23 @@ REAL orient3d(struct mesh *m, struct behavior *b,
 /*                                                                           */
 /*****************************************************************************/
 
-REAL nonregular(struct mesh *m, struct behavior *b,
-                vertex pa, vertex pb, vertex pc, vertex pd)
-{
-  if (b->weighted == 0) {
-    return incircle(m, b, pa, pb, pc, pd);
-  } else if (b->weighted == 1) {
-    return orient3d(m, b, pa, pb, pc, pd,
-                    pa[0] * pa[0] + pa[1] * pa[1] - pa[2],
-                    pb[0] * pb[0] + pb[1] * pb[1] - pb[2],
-                    pc[0] * pc[0] + pc[1] * pc[1] - pc[2],
-                    pd[0] * pd[0] + pd[1] * pd[1] - pd[2]);
-  } else {
-    return orient3d(m, b, pa, pb, pc, pd, pa[2], pb[2], pc[2], pd[2]);
-  }
-}
+extern REAL nonregular(struct mesh *m, struct behavior *b,
+                vertex pa, vertex pb, vertex pc, vertex pd);
+//REAL nonregular(struct mesh *m, struct behavior *b,
+//                vertex pa, vertex pb, vertex pc, vertex pd)
+//{
+//  if (b->weighted == 0) {
+//    return incircle(m, b, pa, pb, pc, pd);
+//  } else if (b->weighted == 1) {
+//    return orient3d(m, b, pa, pb, pc, pd,
+//                    pa[0] * pa[0] + pa[1] * pa[1] - pa[2],
+//                    pb[0] * pb[0] + pb[1] * pb[1] - pb[2],
+//                    pc[0] * pc[0] + pc[1] * pc[1] - pc[2],
+//                    pd[0] * pd[0] + pd[1] * pd[1] - pd[2]);
+//  } else {
+//    return orient3d(m, b, pa, pb, pc, pd, pa[2], pb[2], pc[2], pd[2]);
+//  }
+//}
 
 /*****************************************************************************/
 /*                                                                           */
