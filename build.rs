@@ -6,7 +6,7 @@ fn main() {
 
     let mut build = cc::Build::new();
 
-    if cfg!(unix) {
+    if cfg!(linux) {
         build.flag("-DLINUX");
     } else if cfg!(windows) {
         build.flag("-DCPU86");
