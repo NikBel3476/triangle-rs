@@ -15,9 +15,10 @@ categories = ["algorithms", "mathematics", "science", "simulation"]
 cc = { version = "1.0", features = ["parallel"] }
 
 [dev-dependencies]
-spade = "1.8.2"
+spade = "2.2.0"
 #complot = { path = "../complot", features = ["svg"] }
-plotters = "0.3.4"
+#plotters = "0.3.4"
+plotters = { git = "https://github.com/plotters-rs/plotters.git", branch = "master" }
 
 [dependencies]
 rayon = "1.5.0"
