@@ -3,7 +3,7 @@ use triangulate::PolygonList;
 use triangulate::{formats, ListFormat};
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
-    let polygon: Vec<Vec<[f32; 2]>> = vec![vec![
+    let polygon: Vec<Vec<[f64; 2]>> = vec![vec![
         [35.97872543334961, -34.659114837646484],
         [35.97872543334961, -37.01911163330078],
         [33.9708251953125, -37.01911163330078],
@@ -32,7 +32,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .triangulate(formats::IndexedListFormat::new(&mut triangulated_indices).into_fan_format())
         .expect("Triangulation failed");
 
-    println!("{:?}", triangulated_indices);
+    println!("{:?}", triangulated_indices.chunks(3).collect::<Vec<_>>());
 
     // let tri = Builder::new()
     //     .set_switches("p")
@@ -53,7 +53,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     chart.configure_mesh().draw()?;
 
     let line_series = LineSeries::new(
-        polygon[0].iter().map(|point| (point[0], point[1])),
+        polygon[0]
+            .iter()
+            .map(|point| (point[0] as f32, point[1] as f32)),
         BLUE.stroke_width(2),
     );
 
@@ -62,6 +64,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .label("points")
         .legend(|(x, y)| PathElement::new(vec![(x, y), (x + 20, y)], BLUE.stroke_width(2)));
 
+    let mut figure_area = 0.0;
     triangulated_indices
         .chunks(3)
         .map(|triangle| {
@@ -71,8 +74,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             vec![vertex0, vertex1, vertex2, vertex0]
         })
         .for_each(|triangle| {
-            let triangle_series =
-                LineSeries::new(triangle.iter().map(|point| (point[0], point[1])), &RED);
+            figure_area += 0.5
+                * ((triangle[0][0] - triangle[2][0]) * (triangle[1][1] - triangle[2][1])
+                    - (triangle[1][0] - triangle[2][0]) * (triangle[0][1] - triangle[2][1]))
+                    .abs();
+            let triangle_series = LineSeries::new(
+                triangle
+                    .iter()
+                    .map(|point| (point[0] as f32, point[1] as f32)),
+                &RED,
+            );
             chart.draw_series(triangle_series).unwrap();
         });
 
@@ -84,7 +95,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
     root.present()?;
 
-    // println!("Figure area = {:#?}", tri.area());
+    println!("Figure area = {:#?}", figure_area);
 
     Ok(())
 }
