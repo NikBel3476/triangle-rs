@@ -56,7 +56,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     root.fill(&WHITE)?;
 
     let mut chart = ChartBuilder::on(&root)
-        .caption("spade_example", ("sans-serif", 50).into_font())
+        .caption("spade figure with right angles", ("sans-serif", 50).into_font())
         .margin(5)
         .x_label_area_size(100)
         .y_label_area_size(100)

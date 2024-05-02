@@ -40,11 +40,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     //     .build();
 
     let root =
-        BitMapBackend::new("examples/plots/triangulate_lib.png", (800, 600)).into_drawing_area();
+        BitMapBackend::new("examples/plots/triangulate_figure_with_right_angles.png", (800, 600)).into_drawing_area();
     root.fill(&WHITE)?;
 
     let mut chart = ChartBuilder::on(&root)
-        .caption("figure with right angles", ("sans-serif", 50).into_font())
+        .caption("triangulate figure with right angles", ("sans-serif", 50).into_font())
         .margin(5)
         .x_label_area_size(100)
         .y_label_area_size(100)
